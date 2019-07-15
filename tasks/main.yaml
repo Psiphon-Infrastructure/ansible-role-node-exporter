@@ -42,6 +42,11 @@
     mode: 0644
     owner: root
     group: root
+  register: exporter_service
+
+- name: Update systemd if service is changed
+  shell: systemctl daemon-reload && systemctl restart node_exporter
+  when: exporter_service is changed
 
 - name: Start node_exporter
   service:
@@ -49,4 +54,25 @@
     state: started
     enabled: yes
 
+- name: Create metrics folder
+  file:
+    path: /opt/metrics
+    state: directory
+
+- name: Create Cron job to get number of security updates
+  cron:
+    name: get security updates
+    hour: 12
+    user: root
+    job: "echo node_package_security_updates $(apt-get upgrade -s | grep -i \"security\" | wc -l) > /opt/metrics/node_package_security_updates.prom"
+    cron_file: prometheus_security_updates
+
+
+- name: Create Cron job to get updates count
+  cron:
+    name: get updates
+    hour: 12
+    user: root
+    job: "echo node_package_updates $(apt-get upgrade -s |grep -P '^\d+ upgraded'|cut -d" " -f1) > /opt/metrics/node_package_updates.prom"
+    cron_file: prometheus_security_updates
 

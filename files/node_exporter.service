@@ -3,7 +3,7 @@ Description=Prometheus node exporter.
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/node_exporter --web.listen-address=localhost:9100
+ExecStart=/usr/bin/node_exporter --web.listen-address=localhost:9100 --collector.textfile.directory=/opt/metrics/
 
 [Install]
 WantedBy=multi-user.target
