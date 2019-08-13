@@ -1,0 +1,3 @@
+location /node_exporter/ {
+  proxy_pass http://{{ node_exporter_listen_address }};
+}

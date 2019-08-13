@@ -1,0 +1,22 @@
+- name: Make sure metrics dir exist
+  file: 
+    path: "{{ node_exporter_prometheus_metrics }}"
+    state: directory
+
+- name: Create cron job to get security upates
+  cron:
+    name: get security updates
+    hour: "12"
+    minute: "0"
+    user: root
+    job: echo node_package_security_updates $(apt-get upgrade -s | grep -i "security" | wc -l) > {{ node_exporter_prometheus_metrics }}/node_package_security_updates.prom
+    cron_file: prometheus_security_updates
+
+- name: Create cron job to get upates count
+  cron:
+    name: get updates
+    hour: "12"
+    minute: "0"
+    user: root
+    job: echo node_package_updates $(apt-get upgrade -s |grep -P '^\d+ upgraded'|cut -d " " -f1) > {{ node_exporter_prometheus_metrics }}/node_package_updates.prom
+    cron_file: prometheus_security_updates
