@@ -1,0 +1,8 @@
+- hosts: "{{ target }}"
+  become: true
+  gather_facts: yes
+  roles:
+    - ansible-role-reverse-proxy
+    - ansible-role-node-exporter
+
+
