@@ -48,10 +48,10 @@
 
 - block:
   - name: Check if reverse proxy continer is running
-    shell: docker ps -q --filter "label={{ node_exporter_reverse_proxy }}"
+    shell: docker ps -a -q --filter "label={{ node_exporter_reverse_proxy }}"
     register: reverse_proxy
     changed_when: false
-  
+
   - name: Configure reverse proxy
     template:
       src: exporter.https.location.j2
