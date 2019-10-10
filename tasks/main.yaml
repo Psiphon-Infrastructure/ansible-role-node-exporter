@@ -1,80 +1,88 @@
 ---
 # file: ansible-role-node-exporter/tasks/main.yaml
 
-- include_role:
-    name: ansible-role-reverse-proxy
-  vars:
-    nginx_proxy_pass: http://localhost:9100
-    nginx_data_dir: /opt/nginx-exporter-proxy
-    nginx_container_port: "80:80" 
-    nginx_container_name: nginx-exporter-proxy
-    nginx_container_network: host
-    allowedHosts: ['127.0.0.1', '172.16.0.0/12']
+- name: Create role directory
+  file:
+    path: "{{ node_exporter_data_dir }}"
+    state: directory
 
 - name: Download exporter
   get_url:
-    url: https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz
-    dest: /opt/exporter_{{ node_exporter_version }}.tar.gz
+    url: https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_exporter_version }}/node_exporter-{{ node_exporter_exporter_version }}.linux-amd64.tar.gz
+    dest: "{{ node_exporter_data_dir }}/exporter_{{ node_exporter_exporter_version }}.tar.gz"
   register: download
 
+#- name: Install exporter
+#  block:
 - name: Untar exporter
   unarchive:
-    src: /opt/exporter_{{ node_exporter_version }}.tar.gz
+    src: "{{ node_exporter_data_dir }}/exporter_{{ node_exporter_exporter_version }}.tar.gz"
     remote_src: yes
-    dest: /opt
+    dest: "{{ node_exporter_data_dir }}"
     extra_opts: [--strip-components=1]
-  when: download is changed
 
 - name: Copy executable to PATH
   copy:
-    src: /opt/node_exporter
+    src: "{{ node_exporter_data_dir }}/node_exporter"
     remote_src: yes
-    dest: /usr/bin/node_exporter
+    dest: /usr/local/bin/node_exporter
     owner: root
     group: root
     mode: 0755
-  when: download is not skipped 
+  notify: node_exporter_systemd_restart
+#  when: download is changed
+
+- name: Create node_exporter user/group
+  group:
+    name: node_exporter
+- user:
+    name: node_exporter
+    groups: node_exporter
+    shell: /sbin/nologin
+
+- name: Check if docker is installed
+  command: docker --version
+  register: docker
+  changed_when: false
+  failed_when: false
+
+- block:
+  - name: Check if reverse proxy continer is running
+    shell: docker ps -a -q --filter "label={{ node_exporter_reverse_proxy }}"
+    register: reverse_proxy
+    changed_when: false
+
+  - name: Configure reverse proxy
+    template:
+      src: exporter.https.location.j2
+      dest: "{{ node_exporter_proxy_data_dir }}/conf.d/{{ role_name }}.https.location"
+      owner: root
+      mode: 0600
+    notify: reverse_proxy_nginx_restart
+    when: not reverse_proxy.stdout == ""
+
+  when: docker.rc == 0
+
+- name: Config without proxy
+  set_fact: node_exporter_listen_address="0.0.0.0:9100"
+  when: docker.rc != 0
 
 - name: Create systemd service
-  copy: 
-    src: node_exporter.service
+  template: 
+    src: node_exporter.service.j2
     dest: /lib/systemd/system/node_exporter.service
     mode: 0644
     owner: root
     group: root
-  register: exporter_service
+  notify: node_exporter_systemd_restart
 
-- name: Update systemd if service is changed
-  shell: systemctl daemon-reload && systemctl restart node_exporter
-  when: exporter_service is changed
-
-- name: Start node_exporter
-  service:
-    name: node_exporter
+- name: add sys updates metrics
+  include_tasks: monitor_updates.yaml
+  when: node_exporter_metrics_updates
+ 
+- name: enable service
+  systemd:
     state: started
-    enabled: yes
-
-- name: Create metrics folder
-  file:
-    path: /opt/metrics
-    state: directory
-
-- name: Create Cron job to get number of security updates
-  cron:
-    name: get security updates
-    hour: 12
-    minute: 0
-    user: root
-    job: echo node_package_security_updates $(apt-get upgrade -s | grep -i "security" | wc -l) > /opt/metrics/node_package_security_updates.prom
-    cron_file: prometheus_security_updates
-
-
-- name: Create Cron job to get updates count
-  cron:
-    name: get updates
-    hour: 12
-    minute: 0
-    user: root
-    job: echo node_package_updates $(apt-get upgrade -s |grep -P '^\d+ upgraded'|cut -d " " -f1) > /opt/metrics/node_package_updates.prom
-    cron_file: prometheus_security_updates
-
+    enabled: true
+    daemon_reload: yes
+    name: node_exporter

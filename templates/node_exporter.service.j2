@@ -1,0 +1,9 @@
+[Unit]
+Description=Prometheus node exporter.
+
+[Service]
+User=node_exporter
+ExecStart=/usr/local/bin/node_exporter --web.telemetry-path="/node_exporter/metrics" --web.listen-address={{ node_exporter_listen_address }} --collector.textfile.directory={{ node_exporter_prometheus_metrics }}
+
+[Install]
+WantedBy=multi-user.target
