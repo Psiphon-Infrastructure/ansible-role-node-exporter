@@ -8,3 +8,10 @@ node_exporter_data_dir: "{{ global_ansible_dir | default('/opt/default') }}/node
 node_exporter_reverse_proxy: "{{ reverse_proxy_nginx_label | default('role=reverse_proxy')}}"
 node_exporter_proxy_data_dir: "{{ reverse_proxy_nginx_data_dir | default('/opt/default/nginx') }}"
 node_exporter_prometheus_metrics: "{{ global_prometheus_metrics | default('/opt/default/metrics')}}"
+
+# openvpn exporter variables
+node_exporter_ovpn_status: /etc/openvpn/openvpn-status.log
+## number of seconds between ovpn status polls
+node_exporter_ovpn_poll: 15
+node_exporter_export_ovpn: false
+node_exporter_ovpn_exec: /usr/local/bin/openvpn_exporter

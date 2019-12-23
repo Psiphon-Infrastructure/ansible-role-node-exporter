@@ -45,12 +45,14 @@
   register: docker
   changed_when: false
   failed_when: false
+  check_mode: no
 
 - block:
   - name: Check if reverse proxy continer is running
     shell: docker ps -a -q --filter "label={{ node_exporter_reverse_proxy }}"
     register: reverse_proxy
     changed_when: false
+    check_mode: no
 
   - name: Configure reverse proxy
     template:
@@ -67,7 +69,7 @@
   set_fact: node_exporter_listen_address="0.0.0.0:9100"
   when: docker.rc != 0
 
-- name: Create systemd service
+- name: Create systemd service. Listens on {{ node_exporter_listen_address }}
   template: 
     src: node_exporter.service.j2
     dest: /lib/systemd/system/node_exporter.service
@@ -80,9 +82,20 @@
   include_tasks: monitor_updates.yaml
   when: node_exporter_metrics_updates
  
+- name: add ovpn metrics
+  include_tasks: ovpn_exporter.yaml
+  when: node_exporter_export_ovpn
+ 
 - name: enable service
   systemd:
     state: started
     enabled: true
     daemon_reload: yes
     name: node_exporter
+
+- name: enable service
+  systemd:
+    state: started
+    enabled: true
+    daemon_reload: yes
+    name: openvpn_exporter

@@ -1,0 +1,8 @@
+[Unit]
+Description=Prometheus openvpn exporter.
+
+[Service]
+ExecStart={{ node_exporter_ovpn_exec }} -f {{ node_exporter_ovpn_status }} -d {{ node_exporter_prometheus_metrics }}/openvpn_metric.prom -t {{ node_exporter_ovpn_poll }}
+
+[Install]
+WantedBy=multi-user.target
