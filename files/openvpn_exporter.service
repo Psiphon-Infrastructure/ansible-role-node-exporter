@@ -1,0 +1,8 @@
+[Unit]
+Description=Prometheus openvpn exporter.
+
+[Service]
+ExecStart=/usr/local/bin/openvpn_exporter -f /etc/openvpn/openvpn-status.log -d /opt/default/metrics/openvpn_metric.prom -t 15
+
+[Install]
+WantedBy=multi-user.target
