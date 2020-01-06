@@ -83,19 +83,32 @@
   when: node_exporter_metrics_updates
  
 - name: add ovpn metrics
-  include_tasks: ovpn_exporter.yaml
+  block:
+    - include_tasks: ovpn_exporter.yaml
+    - name: enable openvpn_exporter service
+      systemd:
+        state: started
+        enabled: true
+        daemon_reload: yes
+        name: openvpn_exporter
   when: node_exporter_export_ovpn
  
-- name: enable service
+- name: add wifi metrics
+  block:
+    - include_tasks: wifi_exporter.yaml
+    - name: enable openvpn_exporter service
+      systemd:
+        state: started
+        enabled: true
+        daemon_reload: yes
+        name: wifi_exporter
+  when: node_exporter_export_wifi
+
+- name: enable services
   systemd:
     state: started
     enabled: true
     daemon_reload: yes
     name: node_exporter
 
-- name: enable service
-  systemd:
-    state: started
-    enabled: true
-    daemon_reload: yes
-    name: openvpn_exporter
+

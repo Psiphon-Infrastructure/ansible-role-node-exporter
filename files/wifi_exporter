@@ -1,0 +1,43 @@
+#!/bin/bash
+LOG_FILE=$1
+METRIC_FILE=$2
+WHITELIST_FILE=$3
+
+cmd() {
+	sed -n -e "s/\(^.*: \)\([^(][^(]*\)\(.*${hostMac}.*\)/\2/p" ${LOG_FILE} | tail -n 1
+}
+echo > $METRIC_FILE
+tail -n +1 -F $LOG_FILE | \
+while read -ra LINE
+do
+  connected="${LINE[0]} ${LINE[1]} ${LINE[2]}"
+  host=${LINE[5]}
+  action=${LINE[6]}
+  ap=${LINE[-1]}
+
+  hostName=${host%%(*}
+  hostAddr=${host#*\(};
+  hostMac=${hostAddr:0:17}
+  hostIP=${hostAddr:17:-1}
+  hostIP=${hostIP#*/}
+  
+
+  if [ $action == "joins" ]
+  then
+    if grep -q "$hostName,$hostMac" $WHITELIST_FILE
+    then
+      hostUnknown=0
+    else
+      hostUnknown=1
+    fi
+    if [ -z ${hostName} ]
+    then
+      hostName=$(cmd)
+    fi
+    echo "wireless_client_host_up{mac=\"${hostMac}\",name=\"${hostName}\",ap=\"${ap}\"} 1" >> $METRIC_FILE
+    echo "wireless_client_host_unknown{mac=\"${hostMac}\",name=\"${hostName}\",ap=\"${ap}\"} ${hostUnknown}" >> $METRIC_FILE
+  else
+    sed -i.bak "/^.*${hostMac}.*${ap}.*/d" $METRIC_FILE
+  fi
+
+done

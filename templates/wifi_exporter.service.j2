@@ -1,0 +1,8 @@
+[Unit]
+Description=Prometheus wifi clients exporter. Parses logs from Engenius controller.
+
+[Service]
+ExecStart={{ node_exporter_wifi_exec }} {{ node_exporter_wifi_log }} {{ node_exporter_prometheus_metrics }}/wifi_metric.prom {{ node_exporter_wifi_whitelist }}
+
+[Install]
+WantedBy=multi-user.target
