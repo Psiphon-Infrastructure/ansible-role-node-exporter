@@ -10,6 +10,10 @@ echo > $METRIC_FILE
 tail -n +1 -F $LOG_FILE | \
 while read -ra LINE
 do
+  if [${LINE[4]} != "%Client-6:" ]
+  then
+    continue
+  fi
   connected="${LINE[0]} ${LINE[1]} ${LINE[2]}"
   host=${LINE[5]}
   action=${LINE[6]}

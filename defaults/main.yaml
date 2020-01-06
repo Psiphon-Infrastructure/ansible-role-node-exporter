@@ -15,3 +15,9 @@ node_exporter_ovpn_status: /etc/openvpn/openvpn-status.log
 node_exporter_ovpn_poll: 15
 node_exporter_export_ovpn: false
 node_exporter_ovpn_exec: /usr/local/bin/openvpn_exporter
+
+# wifi exporter variables
+node_exporter_wifi_log: /var/log/wifi_controller/syslog
+node_exporter_wifi_whitelist: "{{ node_exporter_data_dir }}/mac_whitelist.csv"
+node_exporter_export_wifi: false
+node_exporter_wifi_exec: /usr/local/bin/wifi_exporter
