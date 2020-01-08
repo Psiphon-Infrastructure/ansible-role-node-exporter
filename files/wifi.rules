@@ -1,0 +1,13 @@
+groups:
+- name: alert.rules
+  rules:
+    # Unknown Client
+    - alert: UnknownClient
+      expr: wireless_client_host_unknown == 1
+      for: 1s
+      labels:
+        severity: "warning"
+      annotations:
+        summary: "Client {{ $labels.mac }} is not in the whitelist."
+        description: "Client with MAC of {{ $labels.mac }} and hostname {{ $labels.name }} is not registered with IT team."
+

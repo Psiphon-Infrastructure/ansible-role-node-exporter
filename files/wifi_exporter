@@ -4,7 +4,7 @@ METRIC_FILE=$2
 WHITELIST_FILE=$3
 
 cmd() {
-	sed -n -e "s/\(^.*: \)\([^(][^(]*\)\(.*${hostMac}.*\)/\2/p" ${LOG_FILE} | tail -n 1
+    sed -n -e "s/\(^.*: \)\([^(][^(]*\)\(.*${hostMac}.*\)/\2/p" ${LOG_FILE} | tail -n 1
 }
 echo > $METRIC_FILE
 tail -n +1 -F $LOG_FILE | \
@@ -18,7 +18,7 @@ do
   hostAddr=""
   hostMac=""
   hostIP=""
-  
+
 
   connected="${LINE[0]} ${LINE[1]} ${LINE[2]}"
   host=${LINE[5]}
@@ -30,7 +30,7 @@ do
   hostMac=${hostAddr:0:17}
   hostIP=${hostAddr:17:-1}
   hostIP=${hostIP#*/}
-  
+
   if [ $action == "joins" ]
   then
     if grep -qi "$hostMac" $WHITELIST_FILE
@@ -54,3 +54,4 @@ do
   fi
 
 done
+
