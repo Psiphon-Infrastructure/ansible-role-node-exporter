@@ -10,10 +10,16 @@ echo > $METRIC_FILE
 tail -n +1 -F $LOG_FILE | \
 while read -ra LINE
 do
-  if [${LINE[4]} != "%Client-6:" ]
+  if [ ${LINE[4]} != "%Client-6:" ]
   then
     continue
   fi
+  hostName=""
+  hostAddr=""
+  hostMac=""
+  hostIP=""
+  
+
   connected="${LINE[0]} ${LINE[1]} ${LINE[2]}"
   host=${LINE[5]}
   action=${LINE[6]}
@@ -25,22 +31,25 @@ do
   hostIP=${hostAddr:17:-1}
   hostIP=${hostIP#*/}
   
-
   if [ $action == "joins" ]
   then
-    if grep -q "$hostName,$hostMac" $WHITELIST_FILE
+    if grep -qi "$hostMac" $WHITELIST_FILE
     then
       hostUnknown=0
+      userName=$(grep -i "$hostMac" $WHITELIST_FILE)
+      userName=${userName##*,}
     else
       hostUnknown=1
+      userName=""
     fi
     if [ -z ${hostName} ]
     then
       hostName=$(cmd)
     fi
-    echo "wireless_client_host_up{mac=\"${hostMac}\",name=\"${hostName}\",ap=\"${ap}\"} 1" >> $METRIC_FILE
-    echo "wireless_client_host_unknown{mac=\"${hostMac}\",name=\"${hostName}\",ap=\"${ap}\"} ${hostUnknown}" >> $METRIC_FILE
+    echo "wireless_client_host_up{mac=\"${hostMac}\",name=\"${hostName}\",ap=\"${ap}\",user=\"${userName}\"} 1" >> $METRIC_FILE
+    echo "wireless_client_host_unknown{mac=\"${hostMac}\",name=\"${hostName}\",ap=\"${ap}\",user=\"${userName}\"} ${hostUnknown}" >> $METRIC_FILE
   else
+    #sed -i.bak "0,/^.*${hostMac}.*${ap}.*/{//d;}" $METRIC_FILE
     sed -i.bak "/^.*${hostMac}.*${ap}.*/d" $METRIC_FILE
   fi
 
